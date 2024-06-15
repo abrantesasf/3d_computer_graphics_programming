@@ -28,9 +28,9 @@ Progresso do curso:
 - [ ] SDL Setup and Color Buffer
   - [x] Creating an SDL Window
   - [x] Rendering an SDL Window
-  - [ ] Declaring a Color Buffer
-  - [ ] Colorbuffer vs. Framebuffer
-  - [ ] Allocation Memory and Freeing Resources
+  - [x] Declaring a Color Buffer
+  - [x] Colorbuffer vs. Framebuffer
+  - [x] Allocation Memory and Freeing Resources
   - [ ] Checking for Errors in Memory Allocation
   - [ ] Quiz: Memory Allocation
   - [ ] The Operator sizeof
