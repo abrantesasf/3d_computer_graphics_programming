@@ -13,7 +13,7 @@ informações na página do curso:
 
 Progresso do curso:
 
-- [] Introduction
+- [ ] Introduction
 - [] Compiling our project
 - [] SDL Setup and Color Buffer
 - [] Multiple Header Files
