@@ -31,9 +31,9 @@ Progresso do curso:
   - [x] Declaring a Color Buffer
   - [x] Colorbuffer vs. Framebuffer
   - [x] Allocation Memory and Freeing Resources
-  - [ ] Checking for Errors in Memory Allocation
-  - [ ] Quiz: Memory Allocation
-  - [ ] The Operator sizeof
+  - [x] Checking for Errors in Memory Allocation
+  - [x] Quiz: Memory Allocation
+  - [x] The Operator sizeof
   - [ ] SDL Texture
   - [ ] Fullscreen Window
   - [ ] Exercise: Drawing a Background Grid
