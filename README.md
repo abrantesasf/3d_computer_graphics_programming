@@ -17,8 +17,31 @@ Progresso do curso:
   - [x] Introduction and Learning Outcomes
   - [x] How to Take this Course
   - [x] Words of Encouragement
-- [ ] Compiling our project
+- [x] Compiling our project
+  - [x] Project Dependencies
+  - [x] A Quick Note for Windows Users
+  - [x] Project Folder Structure
+  - [x] The Compilation Flow
+  - [x] Working with Makefiles
+  - [x] Configuring Visual Studio in Windows
+  - [x] Can I use WSL on Windows?
 - [ ] SDL Setup and Color Buffer
+  - [x] Creating an SDL Window
+  - [x] Rendering an SDL Window
+  - [ ] Declaring a Color Buffer
+  - [ ] Colorbuffer vs. Framebuffer
+  - [ ] Allocation Memory and Freeing Resources
+  - [ ] Checking for Errors in Memory Allocation
+  - [ ] Quiz: Memory Allocation
+  - [ ] The Operator sizeof
+  - [ ] SDL Texture
+  - [ ] Fullscreen Window
+  - [ ] Exercise: Drawing a Background Grid
+  - [ ] Drawing a Background Grid
+  - [ ] Background Color Patterns
+  - [ ] Exercise: Drawing Rectangles
+  - [ ] Creating a Function to Draw Rectangles
+  - [ ] Quiz: Color Buffer
 - [ ] Multiple Header Files
 - [ ] Vectors and Points
 - [ ] Projecting Points
