@@ -13,33 +13,36 @@ informações na página do curso:
 
 Progresso do curso:
 
-- [ ] Introduction
-- [] Compiling our project
-- [] SDL Setup and Color Buffer
-- [] Multiple Header Files
-- [] Vectors and Points
-- [] Projecting Points
-- [] Linear Transformations
-- [] Fixed Time Step
-- [] Triangles and Vertices
-- [] Line Drawing
-- [] Dynamic Arrays
-- [] OBJ Files
-- [] Vector Operations
-- [] Triangle Rasterization
-- [] Sorting Faces by Depth
-- [] Matrices
-- [] 3D Matrix Transformations
-- [] Projection Matrix
-- [] Light and Shading
-- [] Texture Mapping
-- [] Perspective Correct Textures
-- [] Decoing PNG Files
-- [] Textures OBJ Files
-- [] Z-Buffer
-- [] Camera
-- [] Clipping
-- [] Code Polishing & Refactoring
-- [] Multiple Meshes
-- [] CPU vs. GPU Rasterization
-- [] Conclusion and Next Steps
+- [x] Introduction
+  - [x] Introduction and Learning Outcomes
+  - [x] How to Take this Course
+  - [x] Words of Encouragement
+- [ ] Compiling our project
+- [ ] SDL Setup and Color Buffer
+- [ ] Multiple Header Files
+- [ ] Vectors and Points
+- [ ] Projecting Points
+- [ ] Linear Transformations
+- [ ] Fixed Time Step
+- [ ] Triangles and Vertices
+- [ ] Line Drawing
+- [ ] Dynamic Arrays
+- [ ] OBJ Files
+- [ ] Vector Operations
+- [ ] Triangle Rasterization
+- [ ] Sorting Faces by Depth
+- [ ] Matrices
+- [ ] 3D Matrix Transformations
+- [ ] Projection Matrix
+- [ ] Light and Shading
+- [ ] Texture Mapping
+- [ ] Perspective Correct Textures
+- [ ] Decoing PNG Files
+- [ ] Textures OBJ Files
+- [ ] Z-Buffer
+- [ ] Camera
+- [ ] Clipping
+- [ ] Code Polishing & Refactoring
+- [ ] Multiple Meshes
+- [ ] CPU vs. GPU Rasterization
+- [ ] Conclusion and Next Steps
