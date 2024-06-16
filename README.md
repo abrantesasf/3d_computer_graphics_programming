@@ -34,7 +34,7 @@ Progresso do curso:
   - [x] Checking for Errors in Memory Allocation
   - [x] Quiz: Memory Allocation
   - [x] The Operator sizeof
-  - [ ] SDL Texture
+  - [x] SDL Texture
   - [ ] Fullscreen Window
   - [ ] Exercise: Drawing a Background Grid
   - [ ] Drawing a Background Grid

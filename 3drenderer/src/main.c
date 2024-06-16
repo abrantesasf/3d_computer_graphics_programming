@@ -4,16 +4,21 @@
 #include <SDL2/SDL.h>
 
 // Declarações globais:
-SDL_Window *janela = NULL;             // ponteiro para uma janela
-SDL_Renderer *renderizador = NULL;     // ponteiro para um renderizador
-bool esta_rodando = false;             // status de execução do programa
-uint32_t *buffer_de_cor = NULL;        // ponteiro para o color buffer
-int largura = 800;                     // largura da janela
-int altura = 600;                      // altura da janela
+bool esta_rodando = false;                     // status de execução do programa
+
+SDL_Window *janela = NULL;                     // ponteiro para uma janela
+int largura = 800;                             // largura da janela
+int altura = 600;                              // altura da janela
+
+SDL_Renderer *renderizador = NULL;             // ponteiro para um renderizador
+
+uint32_t *buffer_de_cor = NULL;                // ponteiro para o color buffer
+SDL_Texture *textura_do_buffer_de_cor = NULL;  // textura para o buffer de cor
+
 
 // Protótipos de funções:
 bool inicializar_janela(void);         // inicializa uma janela
-void configurar(void);                 // setup inicial da aplicação
+bool configurar(void);                 // setup inicial da aplicação
 void processar_input(void);            // recebe e processa inputs do usuário
 void atualizar(void);                  // atualiza o estado do programa
 void renderizar(void);                 // renderiza a aplicação
@@ -25,7 +30,8 @@ int main(void)
 {
     esta_rodando = inicializar_janela();
 
-    configurar();
+    if(!configurar())
+        destruir_janela();
 
     while (esta_rodando)
     {
@@ -85,13 +91,34 @@ bool inicializar_janela(void)
 }
 
 
-void configurar(void)
+bool configurar(void)
 {
+    // Cria o color buffer, como uma matriz de cores de pixels com
+    // tamanho largura x altura, armazenada em um array por prioridade de linha.
+    // Para acessar um determinado pixel, fazer:
+    //    (largura * linha) + coluna
     buffer_de_cor = (uint32_t *) malloc(sizeof(uint32_t) * largura * altura);
     if (!buffer_de_cor)
     {
         fprintf(stderr, "Erro na alocação do buffer de cor.\n");
+        return false;
     }
+
+    // Cria uma textura SDL que é usada para mostrar o buffer de cor:
+    textura_do_buffer_de_cor = SDL_CreateTexture(
+        renderizador,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STREAMING,
+        largura,
+        altura);
+    if (!textura_do_buffer_de_cor)
+    {
+        fprintf(stderr, "Erro na criação da textura SDL.\n");
+        return false;
+    }
+
+    // Se tudo foi configurado corretamente, retorna true:
+    return true;
 }
 
 void processar_input(void)
@@ -120,6 +147,32 @@ void atualizar(void)
     
 }
 
+void renderizar_buffer_de_cor(void)
+{
+    // Copiaremos todo o conteúdo do color buffer para a
+    // textura do color buffer
+    SDL_UpdateTexture(textura_do_buffer_de_cor,
+                      NULL,
+                      buffer_de_cor,
+                      (int) (largura * sizeof(uint32_t)));
+
+    SDL_RenderCopy(
+        renderizador,
+        textura_do_buffer_de_cor,
+        NULL, NULL);
+}
+
+void limpar_buffer_de_cor(uint32_t cor)
+{
+    for (int l = 0; l < altura; l++)
+    {
+        for (int c = 0; c < largura; c++)
+        {
+            buffer_de_cor[largura * l + c] = cor;
+        }
+    }
+}
+
 void renderizar(void)
 {
     // Ajusta a cor do renderer. Tem 5 parâmetros: o renderer, os valores
@@ -128,6 +181,15 @@ void renderizar(void)
 
     // Agora vamos limpar tudo:
     SDL_RenderClear(renderizador);
+
+    // Agora vamos renderizar o color buffer:
+    renderizar_buffer_de_cor();
+
+    // Precisamos ser capazes de limpar nosso color buffer pois, a cada
+    // momento que precisamos mostrar um frame da animação ou jogo, precisamos
+    // antes limpar o color buffer para começar a renderizar o color buffer
+    // novamente. Vamos passar a cor com a qual queremos "zerar" o color buffer.
+    limpar_buffer_de_cor(0xFFFFFF00);
 
     // E agora vamos renderizar:
     SDL_RenderPresent(renderizador);
