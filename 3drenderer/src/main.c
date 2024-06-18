@@ -31,7 +31,11 @@ int main(void)
     esta_rodando = inicializar_janela();
 
     if(!configurar())
+    {
         destruir_janela();
+        fprintf(stderr, "Erro na configuração do ambiente.\n");
+        return 1;
+    }
 
     while (esta_rodando)
     {
@@ -197,7 +201,11 @@ void renderizar(void)
 
 void destruir_janela (void)
 {
-    free(buffer_de_cor);
+    if (buffer_de_cor)
+    {
+        free(buffer_de_cor);
+        buffer_de_cor = NULL;
+    }
     SDL_DestroyRenderer(renderizador);
     SDL_DestroyWindow(janela);
     SDL_Quit();
