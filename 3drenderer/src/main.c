@@ -54,18 +54,17 @@ int main(void)
 // Definição das funções:
 bool inicializar_janela(void)
 {
-    // Inicializa o ambiente SDL. Podemos inicializar os
-    // gráficos, o mouse, o teclado, etc. Iremos, no momento,
-    // inicializar tudo:
+    // Inicializa a biblioteca SDL. Podemos inicializar os gráficos, o mouse, o
+    // teclado, etc. Iremos, no momento, inicializar tudo:
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         fprintf(stderr, "Erro na inicialização do SDL.\n");
         return false;
     }
 
-    // Agora temos que criar uma janela SDL. A função que cria a janela
-    // tem 6 parâmetros: título, x, y, w, h, flags. Se o título for null,
-    // a janela não terá um título.
+    // Cria uma janela SDL com uma posição, tamanho e flags. A função que cria
+    // a janela tem 6 parâmetros: título, x, y, w, h, flags. Se o título for
+    // null, a janela não terá um título.
     janela = SDL_CreateWindow(NULL,
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
@@ -78,10 +77,10 @@ bool inicializar_janela(void)
         return false;
     }
 
-    // Agora temos que criar um renderer para a janela que foi criada,
-    // um renderer que vai acompanhar nossa janela. Temos que passar
+    // Cria um contexto de renderização 2D para uma janela específica. É o
+    // contexto de renderização que acompanha uma janela. Temos que passar
     // o ponteiro para a janela, o display onde a janela será exibida (-1
-    // significa o display padrão), e flags (0 significa que não tem
+    // significa o display padrão), e as flags (0 significa que não tem
     // nenhuma flag especial).
     renderizador = SDL_CreateRenderer(janela, -1, 0);
     if (!renderizador)
@@ -97,18 +96,7 @@ bool inicializar_janela(void)
 
 bool configurar(void)
 {
-    // Cria o color buffer, como uma matriz de cores de pixels com
-    // tamanho largura x altura, armazenada em um array por prioridade de linha.
-    // Para acessar um determinado pixel, fazer:
-    //    (largura * linha) + coluna
-    buffer_de_cor = (uint32_t *) malloc(sizeof(uint32_t) * largura * altura);
-    if (!buffer_de_cor)
-    {
-        fprintf(stderr, "Erro na alocação do buffer de cor.\n");
-        return false;
-    }
-
-    // Cria uma textura SDL que é usada para mostrar o buffer de cor:
+    // Cria uma textura para um contexto de renderização.
     textura_do_buffer_de_cor = SDL_CreateTexture(
         renderizador,
         SDL_PIXELFORMAT_ARGB8888,
@@ -118,6 +106,17 @@ bool configurar(void)
     if (!textura_do_buffer_de_cor)
     {
         fprintf(stderr, "Erro na criação da textura SDL.\n");
+        return false;
+    }
+    
+    // Cria o color buffer, como uma matriz de cores de pixels com
+    // tamanho largura x altura, armazenada em um array por prioridade de linha.
+    // Para acessar um determinado pixel, fazer:
+    //    (largura * linha) + coluna
+    buffer_de_cor = (uint32_t *) malloc(sizeof(uint32_t) * largura * altura);
+    if (!buffer_de_cor)
+    {
+        fprintf(stderr, "Erro na alocação do buffer de cor.\n");
         return false;
     }
 
@@ -153,13 +152,15 @@ void atualizar(void)
 
 void renderizar_buffer_de_cor(void)
 {
-    // Copiaremos todo o conteúdo do color buffer para a
-    // textura do color buffer
-    SDL_UpdateTexture(textura_do_buffer_de_cor,
-                      NULL,
-                      buffer_de_cor,
-                      (int) (largura * sizeof(uint32_t)));
+    // Atualiza uma data textura (ou área retangular dessa textura) com os novos
+    // dados das cores dos pixels (que estão armazenados no buffer de cor).
+    SDL_UpdateTexture(
+        textura_do_buffer_de_cor,
+        NULL,
+        buffer_de_cor,
+        (int) (largura * sizeof(uint32_t)));
 
+    // Copia a textura para o alvo de renderização.
     SDL_RenderCopy(
         renderizador,
         textura_do_buffer_de_cor,
@@ -179,11 +180,12 @@ void limpar_buffer_de_cor(uint32_t cor)
 
 void renderizar(void)
 {
-    // Ajusta a cor do renderer. Tem 5 parâmetros: o renderer, os valores
-    // RGB e o valor do alpha (transparência)
+    // Configura a cor utilizada para as operações de desenho.
+    // Tem 5 parâmetros: o renderer, os valores RGB e o valor do alpha
+    // (transparência).
     SDL_SetRenderDrawColor(renderizador, 255, 0, 0, 255);
 
-    // Agora vamos limpar tudo:
+    // Limpa o alvo de renderização atual com a DrawColor acima:
     SDL_RenderClear(renderizador);
 
     // Agora vamos renderizar o color buffer:
