@@ -35,10 +35,10 @@ Progresso do curso:
   - [x] Quiz: Memory Allocation
   - [x] The Operator sizeof
   - [x] SDL Texture
-  - [ ] Fullscreen Window
-  - [ ] Exercise: Drawing a Background Grid
-  - [ ] Drawing a Background Grid
-  - [ ] Background Color Patterns
+  - [x] Fullscreen Window
+  - [x] Exercise: Drawing a Background Grid
+  - [x] Drawing a Background Grid
+  - [x] Background Color Patterns
   - [ ] Exercise: Drawing Rectangles
   - [ ] Creating a Function to Draw Rectangles
   - [ ] Quiz: Color Buffer

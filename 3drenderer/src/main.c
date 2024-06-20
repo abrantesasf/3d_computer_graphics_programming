@@ -7,8 +7,8 @@
 bool esta_rodando = false;                     // status de execução do programa
 
 SDL_Window *janela = NULL;                     // ponteiro para uma janela
-int largura = 800;                             // largura da janela
-int altura = 600;                              // altura da janela
+size_t largura = 800;                          // largura inicial da janela
+size_t altura = 600;                           // altura inicial da janela
 
 SDL_Renderer *renderizador = NULL;             // ponteiro para um renderizador
 
@@ -17,7 +17,7 @@ SDL_Texture *textura = NULL;                   // textura para o framebuffer
 
 
 // Protótipos dos subprogramas:
-bool inicializar_sdl (void);           // inicializa uma janela
+bool inicializar_sdl (void);           // inicializa sdl, janela renderizador
 bool configurar (void);                // setup inicial da aplicação
 void processar (void);                 // recebe e processa inputs do usuário
 void atualizar (void);                 // atualiza o estado do programa
@@ -26,6 +26,8 @@ void finalizar_sdl (void);             // faz a limpeza de estruturas da memóri
 
 void atualizar_textura (void);           // atualiza/copia textura->renderizador
 void limpar_framebuffer (uint32_t cor);  // limpa o framebuffer
+
+void desenhar_grid (size_t tamanho, uint32_t cor, bool tipo);    // desenha grid
 
 
 
@@ -75,8 +77,9 @@ int main(void)
  *    (bool): TRUE se a inicialização foi realizada, FALSE caso contrário.
  *
  * Efeitos colaterais:
- *    a) Atribui janela para a variável SDL_Window *janela;
- *    b) Atribui contexto de renderização para SDL_Renderer *renderizador.
+ *    a) Atribui valores para largura e altura;
+ *    b) Atribui janela para a variável SDL_Window *janela;
+ *    c) Atribui contexto de renderização para SDL_Renderer *renderizador.
  */
 bool inicializar_sdl (void)
 {
@@ -89,6 +92,14 @@ bool inicializar_sdl (void)
         return false;
     }
 
+    // Cria uma struct para obter dados do display (monitor), obtém a largura
+    // e a altura adequadas, e ajusta as variáveis para o tamanho da janela.
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_GetCurrentDisplayMode
+    SDL_DisplayMode modo_do_display;
+    SDL_GetCurrentDisplayMode(0, &modo_do_display);
+    largura = (size_t) modo_do_display.w;
+    altura = (size_t) modo_do_display.h;
+
     // Cria uma janela SDL com uma posição, tamanho e flags. A função que cria
     // a janela tem 6 parâmetros: título, x, y, w, h, flags. Se o título for
     // null, a janela não terá um título.
@@ -96,14 +107,18 @@ bool inicializar_sdl (void)
     janela = SDL_CreateWindow(NULL,
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
-                              largura,
-                              altura,
+                              (int) largura,
+                              (int) altura,
                               SDL_WINDOW_BORDERLESS);
     if (!janela)
     {
         fprintf(stderr, "Erro na criação da janela SDL.\n");
         return false;
     }
+
+    // Com a janela criada, mudamos o modo do display para real fullscreen:
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_SetWindowFullscreen
+    SDL_SetWindowFullscreen(janela, SDL_WINDOW_FULLSCREEN);
 
     // Cria um contexto de renderização 2D para uma janela específica. É o
     // contexto de renderização que acompanha uma janela. Temos que passar
@@ -158,8 +173,8 @@ bool configurar (void)
         renderizador,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
-        largura,
-        altura);
+        (int) largura,
+        (int) altura);
     if (!textura)
     {
         fprintf(stderr, "Erro na criação da textura SDL.\n");
@@ -272,6 +287,9 @@ void renderizar (void)
     // Limpa o framebuffer passando uma cor padrão.
     limpar_framebuffer(0xFFFFFF00);
 
+    // Desenha um grid no framebuffer:
+    desenhar_grid(20, 0xFF000000, true);
+
     // Atualiza a textura com os dados do framebuffer e copia a textura
     // para o renderizador de destino:
     atualizar_textura();
@@ -334,11 +352,53 @@ void atualizar_textura (void)
  */
 void limpar_framebuffer (uint32_t cor)
 {
-    for (int l = 0; l < altura; l++)
+    for (size_t l = 0; l < altura; l++)
     {
-        for (int c = 0; c < largura; c++)
+        for (size_t c = 0; c < largura; c++)
         {
             framebuffer[largura * l + c] = cor;
+        }
+    }
+}
+
+
+/**
+ * DESENHAR_GRID
+ * Altera o framebuffer para desenhar um grid no background, que pode ser com
+ * linha cheia ou pontilhado.
+ *
+ * Parâmetros:
+ *    (size_t tamanho): tamanho do grid
+ *    (uint32_t cor): cor que o grid terá, no padrão 0xAARRGGBB
+ *    (bool tipo): TRUE se cheio; FALSE se pontilhado.
+ *
+ * Retorno:
+ *    (void): o procedimento não retorna nada
+ *
+ * Efeitos colaterais:
+ *    Altera o framebuffer.
+ */
+void desenhar_grid (size_t tamanho, uint32_t cor, bool tipo)
+{
+    if (tipo)
+    {
+        for (size_t l = 0; l < altura; ++l)
+        {
+            for (size_t c = 0; c < largura; ++c)
+            {
+                if (l % tamanho == 0 || c % tamanho == 0)
+                    framebuffer[largura * l + c] = cor;
+            }
+        }
+    }
+    else
+    {
+        for (size_t l = 0; l < altura; l += tamanho)
+        {
+            for (size_t c = 0; c < largura; c += tamanho)
+            {
+                framebuffer[largura * l + c] = cor;
+            }
         }
     }
 }
