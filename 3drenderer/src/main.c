@@ -12,50 +12,77 @@ int altura = 600;                              // altura da janela
 
 SDL_Renderer *renderizador = NULL;             // ponteiro para um renderizador
 
-uint32_t *buffer_de_cor = NULL;                // ponteiro para o color buffer
-SDL_Texture *textura_do_buffer_de_cor = NULL;  // textura para o buffer de cor
+uint32_t *framebuffer = NULL;                  // ponteiro para o framebuffer
+SDL_Texture *textura = NULL;                   // textura para o framebuffer
 
 
-// Protótipos de funções:
-bool inicializar_janela(void);         // inicializa uma janela
-bool configurar(void);                 // setup inicial da aplicação
-void processar_input(void);            // recebe e processa inputs do usuário
-void atualizar(void);                  // atualiza o estado do programa
-void renderizar(void);                 // renderiza a aplicação
-void destruir_janela(void);            // faz a limpeza de estruturas da memória
+// Protótipos dos subprogramas:
+bool inicializar_sdl (void);           // inicializa uma janela
+bool configurar (void);                // setup inicial da aplicação
+void processar (void);                 // recebe e processa inputs do usuário
+void atualizar (void);                 // atualiza o estado do programa
+void renderizar (void);                // renderiza a aplicação
+void finalizar_sdl (void);             // faz a limpeza de estruturas da memória
+
+void atualizar_textura (void);           // atualiza/copia textura->renderizador
+void limpar_framebuffer (uint32_t cor);  // limpa o framebuffer
 
 
-// Função main:
+
+/**
+ * MAIN
+ */
 int main(void)
 {
-    esta_rodando = inicializar_janela();
+    // Inicializa o SDL e garante que a rotina de finalização do SDL seja
+    // chamada quando o programa for encerrado:
+    esta_rodando = inicializar_sdl();
+    atexit(finalizar_sdl);
 
+    // Configura o framebuffer e cria textura para o renderizador:
     if(!configurar())
     {
-        destruir_janela();
+        finalizar_sdl();
         fprintf(stderr, "Erro na configuração do ambiente.\n");
         return 1;
     }
 
+    // Inicia o loop do programa:
     while (esta_rodando)
     {
-        processar_input();
+        processar();
         atualizar();
         renderizar();
     }
 
-    destruir_janela();
-    
+    // Ao terminar o loop, finaliza o ambiente SDL:
+    finalizar_sdl();
+
+    // Retorno do status final:
     return 0;
 }
 
 
-
-// Definição das funções:
-bool inicializar_janela(void)
+/**
+ * INICIALIZAR_SDL
+ * Inicializa a biblioteca SDL, cria uma janela e um contexto de renderização
+ * para a janela.
+ *
+ * Parâmetros:
+ *    (void): a função não recebe nada.
+ *
+ * Retorno:
+ *    (bool): TRUE se a inicialização foi realizada, FALSE caso contrário.
+ *
+ * Efeitos colaterais:
+ *    a) Atribui janela para a variável SDL_Window *janela;
+ *    b) Atribui contexto de renderização para SDL_Renderer *renderizador.
+ */
+bool inicializar_sdl (void)
 {
-    // Inicializa a biblioteca SDL. Podemos inicializar os gráficos, o mouse, o
-    // teclado, etc. Iremos, no momento, inicializar tudo:
+    // Inicializa a biblioteca SDL, passando uma lista OR com as flags que
+    // indicam quais sub-sistemas inicializar.
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_Init
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
     {
         fprintf(stderr, "Erro na inicialização do SDL.\n");
@@ -65,6 +92,7 @@ bool inicializar_janela(void)
     // Cria uma janela SDL com uma posição, tamanho e flags. A função que cria
     // a janela tem 6 parâmetros: título, x, y, w, h, flags. Se o título for
     // null, a janela não terá um título.
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_CreateWindow
     janela = SDL_CreateWindow(NULL,
                               SDL_WINDOWPOS_CENTERED,
                               SDL_WINDOWPOS_CENTERED,
@@ -82,6 +110,7 @@ bool inicializar_janela(void)
     // o ponteiro para a janela, o display onde a janela será exibida (-1
     // significa o display padrão), e as flags (0 significa que não tem
     // nenhuma flag especial).
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_CreateRenderer
     renderizador = SDL_CreateRenderer(janela, -1, 0);
     if (!renderizador)
     {
@@ -94,121 +123,222 @@ bool inicializar_janela(void)
 }
 
 
-bool configurar(void)
+/**
+ * CONFIGURAR
+ * Cria o framebuffer e uma textura para um contexto de renderização.
+ *
+ * Parâmetros:
+ *    (void): a função não recebe nada.
+ *
+ * Retorno:
+ *    (bool): TRUE se a configuração foi feita, FALSE caso contrário.
+ *
+ * Efeitos colaterais:
+ *    a) Atribui array para a variável uint32_t *framebuffer;
+ *    b) Atribui textura de um renderizador na variável
+ *       SDL_Texture *texture.
+ */
+bool configurar (void)
 {
+    // Cria o framebuffer, uma área que descerve a imagem da tela onde cada
+    // pixel corresponde a uma localização na memória, como uma matriz de cores
+    // de pixels com tamanho largura x altura, armazenada em um array por
+    // prioridade de linha. Para acessar um determinado pixel, fazer:
+    //    (largura * linha) + coluna
+    framebuffer = (uint32_t *) malloc(sizeof(uint32_t) * largura * altura);
+    if (!framebuffer)
+    {
+        fprintf(stderr, "Erro na alocação do framebuffer.\n");
+        return false;
+    }
+    
     // Cria uma textura para um contexto de renderização.
-    textura_do_buffer_de_cor = SDL_CreateTexture(
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_CreateTexture
+    textura = SDL_CreateTexture(
         renderizador,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STREAMING,
         largura,
         altura);
-    if (!textura_do_buffer_de_cor)
+    if (!textura)
     {
         fprintf(stderr, "Erro na criação da textura SDL.\n");
         return false;
     }
     
-    // Cria o color buffer, como uma matriz de cores de pixels com
-    // tamanho largura x altura, armazenada em um array por prioridade de linha.
-    // Para acessar um determinado pixel, fazer:
-    //    (largura * linha) + coluna
-    buffer_de_cor = (uint32_t *) malloc(sizeof(uint32_t) * largura * altura);
-    if (!buffer_de_cor)
-    {
-        fprintf(stderr, "Erro na alocação do buffer de cor.\n");
-        return false;
-    }
-
     // Se tudo foi configurado corretamente, retorna true:
     return true;
 }
 
-void processar_input(void)
+
+/**
+ * FINALIZAR_SDL
+ * Finaliza o ambiente SDL, limpando as estruturas de memória que foram criadas
+ * pelo SDL ou pelo programador.
+ *
+ * Parâmetros:
+ *    (void): o procedimento não recebe nada.
+ *
+ * Retorno:
+ *    (void): não retorna nada.
+ */
+void finalizar_sdl (void)
 {
-    // Structure para receber os eventos
+    // Limpa áreas de memória:
+    if (framebuffer)
+    {
+        free(framebuffer);
+        framebuffer = NULL;
+    }
+
+    // Finaliza o ambiente SDL.
+    // Docs: https://wiki.libsdl.org/SDL2/SDL_DestroyTexture
+    //       https://wiki.libsdl.org/SDL2/SDL_DestroyRenderer
+    //       https://wiki.libsdl.org/SDL2/SDL_DestroyWindow
+    //       https://wiki.libsdl.org/SDL2/SDL_Quit
+    SDL_DestroyTexture(textura);
+    SDL_DestroyRenderer(renderizador);
+    SDL_DestroyWindow(janela);
+    SDL_Quit();
+}
+
+
+/**
+ * PROCESSAR
+ * Faz o processamento de todos os inputs do jogo.
+ *
+ * Parâmetros:
+ *    (void): o procedimento não recebe nada.
+ *
+ * Retorno:
+ *    (void): o procedimento não retorna nada.
+ */
+void processar (void)
+{
+    // Structure a ser preenchida com os próximos eventos da fila, ou NULL:
     SDL_Event evento;
 
-    // Recebe o evento:
+    // Pool para os eventos pendentes atuais:
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_PollEvent
     SDL_PollEvent(&evento);
 
     // Testa o evento recebido:
     switch (evento.type)
     {
-        case SDL_QUIT:
+        case SDL_QUIT:                                  // botão x da janela
             esta_rodando = false;
             break;
-        case SDL_KEYDOWN:
+        case SDL_KEYDOWN:                               // tecla ESC
             if (evento.key.keysym.sym == SDLK_ESCAPE)
                 esta_rodando = false;
             break;
     }
 }
 
-void atualizar(void)
+
+// TODO
+void atualizar (void)
 {
-    
+    ;
 }
 
-void renderizar_buffer_de_cor(void)
+
+/**
+ * RENDERIZAR
+ * Exibe as imagens na janela, frame a frame. Faz isso através dos seguintes
+ * passos: limpeza do renderizador, ajuste da cor de desenho do renderizador,
+ * limpeza do framebuffer, atualização da textura com os dados do framebuffer e
+ * cópia da textura para o renderizador, e, finalmente, a renderização da
+ * imagem na janela.
+ *
+ * Parâmetros:
+ *    (void): o procedimento não recebe nada.
+ *
+ * Retorno:
+ *    (tipo): o procedimento não recebe nada.
+ */
+void renderizar (void)
 {
-    // Atualiza uma data textura (ou área retangular dessa textura) com os novos
-    // dados das cores dos pixels (que estão armazenados no buffer de cor).
+    // Limpa o renderizador atual.
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_RenderClear
+    SDL_RenderClear(renderizador); 
+    
+    // Cor utilizada para as operações de desenho do renderizador atual (Rect,
+    // Line, Clear) do renderizador atual. Tem 5 parâmetros: o renderer, os
+    // valores RGB e o valor do alpha (transparência).
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_SetRenderDrawColor
+    SDL_SetRenderDrawColor(renderizador, 255, 0, 0, 255);
+
+    // Limpa o framebuffer passando uma cor padrão.
+    limpar_framebuffer(0xFFFFFF00);
+
+    // Atualiza a textura com os dados do framebuffer e copia a textura
+    // para o renderizador de destino:
+    atualizar_textura();
+
+    // E agora, finalmente, vamos renderizar:
+    SDL_RenderPresent(renderizador);
+}
+
+
+/**
+ * ATUALIZAR_TEXTURA
+ * Atualiza a textura atual com os novos dados dos pixels (armazenados no
+ * framebuffer), e copia essa textura atualizada para o renderizador de
+ * destino.
+ *
+ * Parâmetros:
+ *    (void): o procedimento não recebe nada.
+ *
+ * Retorno:
+ *    (void): o procedimento não retorna nada.
+ *
+ * Efeitos colaterais:
+ *    a) Atualiza a textura em SDL_Texture *textura;
+ *    b) Atualiza o renderizador em SDL_Renderer *renderizador.
+ */
+void atualizar_textura (void)
+{
+    // Atualiza uma dada textura (ou área retangular dessa textura) com os novos
+    // dados dos pixels (armazenados no framebuffer).
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_UpdateTexture
     SDL_UpdateTexture(
-        textura_do_buffer_de_cor,
+        textura,
         NULL,
-        buffer_de_cor,
+        framebuffer,
         (int) (largura * sizeof(uint32_t)));
 
-    // Copia a textura para o alvo de renderização.
+    // Copia uma parte (ou toda) da textura para o alvo de renderização atual.
+    // Doc: https://wiki.libsdl.org/SDL2/SDL_RenderCopy
     SDL_RenderCopy(
         renderizador,
-        textura_do_buffer_de_cor,
+        textura,
         NULL, NULL);
 }
 
-void limpar_buffer_de_cor(uint32_t cor)
+
+/**
+ * LIMPAR_FRAMEBUFFER
+ * Limpa o framebuffer preenchendo-o com uma cor qualquer.
+ *
+ * Parâmetros:
+ *    (uint32_t): um número inteiro em hexadeimal no formato 0xAARRGGBB, onde AA
+ *                é o valor do Alpha, RR o valor de Red, GG o valor de Green e
+ *                BB o valor de Blue (variando de 00 até FF).
+ *
+ * Retorno:
+ *    (void): o procedimento não retorna nada.
+ *
+ * Efeitos colaterais:
+ *    Zerar o framebuffer com uma cor específica.
+ */
+void limpar_framebuffer (uint32_t cor)
 {
     for (int l = 0; l < altura; l++)
     {
         for (int c = 0; c < largura; c++)
         {
-            buffer_de_cor[largura * l + c] = cor;
+            framebuffer[largura * l + c] = cor;
         }
     }
-}
-
-void renderizar(void)
-{
-    // Configura a cor utilizada para as operações de desenho.
-    // Tem 5 parâmetros: o renderer, os valores RGB e o valor do alpha
-    // (transparência).
-    SDL_SetRenderDrawColor(renderizador, 255, 0, 0, 255);
-
-    // Limpa o alvo de renderização atual com a DrawColor acima:
-    SDL_RenderClear(renderizador);
-
-    // Agora vamos renderizar o color buffer:
-    renderizar_buffer_de_cor();
-
-    // Precisamos ser capazes de limpar nosso color buffer pois, a cada
-    // momento que precisamos mostrar um frame da animação ou jogo, precisamos
-    // antes limpar o color buffer para começar a renderizar o color buffer
-    // novamente. Vamos passar a cor com a qual queremos "zerar" o color buffer.
-    limpar_buffer_de_cor(0xFFFFFF00);
-
-    // E agora vamos renderizar:
-    SDL_RenderPresent(renderizador);
-}
-
-void destruir_janela (void)
-{
-    if (buffer_de_cor)
-    {
-        free(buffer_de_cor);
-        buffer_de_cor = NULL;
-    }
-    SDL_DestroyRenderer(renderizador);
-    SDL_DestroyWindow(janela);
-    SDL_Quit();
 }
